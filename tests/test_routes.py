@@ -153,4 +153,27 @@ class TestAccountService(TestCase):
         resp = self.client.put(f"{BASE_URL}/{new_account['id']}", json=new_account)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         updated_account = resp.get_json()
-        self.assertEqual(updated_account["name"], "Something Known")    
+        self.assertEqual(updated_account["name"], "Something Known")   
+
+    def test_update_nonexistent_account(self):
+        """It should return a 404 error when updating a nonexistent Account"""
+        # create an Account without updating it
+        test_account = AccountFactory()
+        resp = self.client.post(BASE_URL, json=test_account.serialize())
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        # try to update an account with an invalid ID
+        non_existent_id = 99999  # Assuming this ID does not exist
+        resp = self.client.put(f"{BASE_URL}/{non_existent_id}", json=test_account.serialize())
+        
+        # Verify that the response is a 404 error and contains the expected message
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        error_message = resp.get_json()["error"]
+        self.assertIn(f"Not Found", error_message)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        
+    def test_delete_account(self):
+        """It should Delete an Account"""
+        account = self._create_accounts(1)[0]
+        resp = self.client.delete(f"{BASE_URL}/{account.id}")
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
